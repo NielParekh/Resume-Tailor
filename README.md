@@ -8,7 +8,7 @@ AI-powered 4-agent system that optimizes resumes for specific job applications u
 # Install dependencies
 pip install -r requirements.txt
 
-# Run with UI (recommended)
+# Run the application
 python3 langchain_resume_agent_ui.py "YourResume.pdf"
 
 # Paste job description and press Ctrl+D
@@ -50,11 +50,8 @@ Three files generated per run:
 ## Usage
 
 ```bash
-# With UI (recommended)
+# Standard mode (paste job description)
 python3 langchain_resume_agent_ui.py "YourResume.pdf"
-
-# Without UI
-python3 langchain_resume_agent.py "YourResume.pdf"
 
 # With job URL
 python3 langchain_resume_agent_url_ui.py "JOB_URL" "YourResume.pdf"
@@ -114,18 +111,15 @@ Edit agent prompts in the Python files to customize behavior:
 
 **Rate Limit**: Wait 1-2 minutes between runs
 
-**URL Fetch Failed**: Use manual mode and paste job description
-
-**No UI**: Ensure running `_ui.py` version
+**URL Fetch Failed**: Use standard mode and paste job description
 
 ## Files
 
 ```
 applier/
-├── langchain_resume_agent_ui.py       ← Main (with UI)
-├── langchain_resume_agent.py          ← Main (no UI)
-├── langchain_resume_agent_url_ui.py   ← URL support (UI)
-├── langchain_resume_agent_url.py      ← URL support (no UI)
+├── langchain_resume_agent_ui.py       ← Main application
+├── langchain_resume_agent_url_ui.py   ← URL support version
+├── test_ui.py                         ← UI demo
 ├── requirements.txt
 ├── README.md
 ├── .env                               ← API key (git ignored)
