@@ -228,14 +228,159 @@ python3 langchain_resume_agent_url_ui.py "https://..." "Niel Parekh New Resume.p
 
 ### Prompt Engineering
 
-Each agent has specialized prompts defined in [PROMPTS.md](PROMPTS.md):
-
-1. **Agent 1**: Expert ATS keyword analyzer with structured JSON output
-2. **Agent 2**: Resume match specialist with quantifiable scoring
-3. **Agent 3**: Expert resume writer with ATS-optimized formatting
-4. **Agent 4**: Senior technical recruiter with 15+ years experience
+Each agent uses carefully crafted prompts with specific personas and output formats:
 
 **Temperature**: 0.7 (balanced creativity and consistency)
+
+#### Agent 1: Keyword Extractor Prompt
+```
+System: You are an expert ATS (Applicant Tracking System) keyword analyzer.
+Your job is to extract the most important keywords from job descriptions.
+
+Extract:
+1. Required technical skills
+2. Required soft skills
+3. Required qualifications
+4. Important industry terms
+5. Tools and technologies mentioned
+6. Certifications or degrees required
+
+Return ONLY a JSON object with this structure:
+{
+    "technical_skills": ["skill1", "skill2", ...],
+    "soft_skills": ["skill1", "skill2", ...],
+    "qualifications": ["qual1", "qual2", ...],
+    "tools_technologies": ["tool1", "tool2", ...],
+    "certifications": ["cert1", "cert2", ...],
+    "industry_terms": ["term1", "term2", ...]
+}
+
+User: Extract keywords from this job description:
+{job_description}
+```
+
+#### Agent 2: Match Scorer Prompt
+```
+System: You are an expert resume analyzer specializing in ATS matching.
+
+Analyze how well the candidate's resume matches the job description.
+
+Consider:
+1. Presence of required keywords
+2. Relevant experience
+3. Skills match
+4. Qualifications match
+5. Industry experience
+
+Provide:
+- Overall match percentage (0-100)
+- Category-wise scores
+- Strengths (what matches well)
+- Gaps (what's missing)
+
+Return ONLY a JSON object:
+{
+    "overall_match_percentage": 85,
+    "category_scores": {
+        "technical_skills": 90,
+        "soft_skills": 80,
+        "experience": 85,
+        "qualifications": 75
+    },
+    "strengths": ["strength1", "strength2", ...],
+    "gaps": ["gap1", "gap2", ...],
+    "recommendation": "Brief recommendation"
+}
+
+User: Analyze this resume against the job:
+Job Description: {job_description}
+Resume: {resume}
+Keywords: {keywords}
+```
+
+#### Agent 3: Resume Tailor Prompt
+```
+System: You are an expert resume writer and career consultant.
+
+Create a professionally tailored resume that:
+1. Incorporates keywords naturally from the job description
+2. Highlights relevant experience and skills
+3. Addresses identified gaps where truthful
+4. Uses ATS-friendly formatting
+5. Maintains truthfulness - NEVER fabricate experience
+
+Use this standard format:
+# [Full Name]
+[Email] | [Phone] | [LinkedIn] | [Location]
+
+## Professional Summary
+[2-3 lines highlighting relevant experience]
+
+## Experience
+### [Job Title] - [Company Name]
+*[Start Date - End Date]*
+- [Achievement with quantifiable results]
+- [Another accomplishment]
+
+## Education
+### [Degree] - [University Name]
+
+## Technical Skills
+**[Category]**: Skill1, Skill2, Skill3
+
+IMPORTANT:
+- Use keywords naturally
+- Emphasize accomplishments aligned with job
+- Keep all information truthful
+- Format for ATS compatibility
+
+User: Create a tailored resume for this job.
+Job: {job_description}
+Current Resume: {resume}
+Keywords: {keywords}
+Match Analysis: {match_analysis}
+```
+
+#### Agent 4: Recruiter Evaluator Prompt
+```
+System: You are a senior technical recruiter with 15+ years of experience hiring
+for top tech companies.
+
+Your role is to evaluate the candidate's profile and provide honest hiring insights.
+
+Evaluate:
+1. Overall candidacy strength (0-100)
+2. Interview readiness
+3. Competitive positioning
+4. Red flags or concerns
+5. Interview talking points
+6. Salary negotiation leverage
+7. Areas to prepare for interviews
+
+Be honest and constructive. Provide actionable feedback.
+
+Return ONLY a JSON object:
+{
+    "candidacy_score": 85,
+    "likelihood_to_proceed": "High/Medium/Low",
+    "interview_readiness": {
+        "technical_prep": "Strong/Moderate/Weak",
+        "behavioral_prep": "Strong/Moderate/Weak",
+        "cultural_fit": "Strong/Moderate/Weak"
+    },
+    "competitive_advantages": ["advantage1", "advantage2", ...],
+    "potential_concerns": ["concern1", "concern2", ...],
+    "key_talking_points": ["point1", "point2", ...],
+    "salary_leverage": "High/Medium/Low with explanation",
+    "interview_prep_focus": ["area1", "area2", ...],
+    "recruiter_notes": "Honest assessment and recommendations"
+}
+
+User: Evaluate this candidate's profile for the role.
+Job: {job_description}
+Tailored Resume: {tailored_resume}
+Match Analysis: {match_analysis}
+```
 
 ---
 
@@ -352,6 +497,61 @@ python3 langchain_resume_agent.py "Niel Parekh New Resume.pdf"     # ← Without
 
 ---
 
+## Beautiful UI Features
+
+The UI version (`langchain_resume_agent_ui.py`) provides a stunning visual experience:
+
+### UI Features
+- ✨ **Real-time Progress Bars** - See each agent's progress with spinners
+- 🎯 **Agent Status Tracking** - Know exactly which agent is running
+- 📊 **Visual Match Scores** - Color-coded progress bars for all categories
+- 📋 **Formatted Tables** - Beautiful keyword and score displays
+- 🎉 **Color-Coded Output** - Green for success, red for gaps, yellow for warnings
+- ⏱️ **Time Tracking** - See how long each step takes
+
+### Color Coding System
+- **Green** (85-100%): Excellent match 🎉
+- **Yellow** (70-84%): Good match 👍
+- **Orange** (60-69%): Moderate match ⚠️
+- **Red** (<60%): Low match ❌
+
+### Visual Progress Indicators
+Each agent shows:
+- ⠋ Spinner animation while working
+- █ Progress bar filling up (e.g., `████████░░ 80%`)
+- ⏱️ Time elapsed
+- ✓ Green checkmark when complete
+
+### UI vs Non-UI Comparison
+
+**Without UI:**
+```
+STEP 1: Extracting Keywords
+✓ Keywords Extracted
+  Technical Skills: Python, ML...
+```
+
+**With UI:**
+```
+⠋ Agent 1: Extracting keywords... ████████████░░ 80% 0:00:08
+
+╭──────────── 📋 Extracted Keywords ─────────────╮
+│ Technical Skills  │ Python, ML, AWS, Docker... │
+│ Soft Skills      │ Leadership, Communication...│
+╰──────────────────────────────────────────────────╯
+```
+
+### Technical Implementation
+Built with [Rich](https://github.com/Textualize/rich) library:
+- Progress bars with spinners
+- Formatted tables with borders
+- Colored panels and text
+- Live updates during execution
+- Cross-platform support (Windows, Mac, Linux)
+- Adapts to terminal width (dark/light mode compatible)
+
+---
+
 ## Files in This Project
 
 ```
@@ -362,8 +562,7 @@ applier/
 ├── langchain_resume_agent_url.py      ← URL support without UI
 ├── test_ui.py                         ← UI demo
 ├── requirements.txt                   ← Dependencies
-├── PROMPTS.md                         ← All agent prompts
-├── AGENT4_RECRUITER.md               ← 4th agent documentation
+├── README.md                          ← This comprehensive guide
 ├── .env                               ← API key (not in git)
 └── .gitignore                         ← Protects sensitive files
 ```
@@ -392,6 +591,46 @@ Install with:
 ```bash
 pip install -r requirements.txt
 ```
+
+---
+
+## Why the 4th Agent (Recruiter) Matters
+
+### Before Agent 4:
+- ❌ You only knew if your resume matched
+- ❌ No insight into hiring likelihood
+- ❌ No preparation guidance
+- ❌ No understanding of competitive position
+
+### With Agent 4:
+- ✅ Know your competitive position
+- ✅ Understand interview likelihood (High/Medium/Low)
+- ✅ Get specific prep recommendations
+- ✅ Identify salary negotiation leverage
+- ✅ Address concerns proactively
+- ✅ Receive honest recruiter feedback
+
+### Key Use Cases
+
+**1. Reality Check**
+- Is this role worth applying to?
+- What are my actual chances?
+- Should I invest time in this application?
+
+**2. Interview Preparation**
+- What should I focus on studying?
+- What are my strongest talking points?
+- How should I frame my experience?
+
+**3. Salary Negotiation**
+- What's my leverage in negotiations?
+- How should I position myself?
+- What's my competitive advantage?
+
+**4. Self-Improvement**
+- What gaps should I address long-term?
+- How can I strengthen my profile?
+- What skills should I develop next?
 
 ---
 
