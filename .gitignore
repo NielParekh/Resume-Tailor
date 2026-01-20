@@ -16,6 +16,9 @@ resume_analysis_*.json
 # Personal resume (contains private information)
 *.pdf
 
+# Code explanation (personal notes)
+CODE_EXPLAINED.md
+
 # macOS
 .DS_Store
 .AppleDouble
