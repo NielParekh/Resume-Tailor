@@ -8,6 +8,7 @@ import os
 import json
 import re
 import time
+import hashlib
 from datetime import datetime
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
@@ -347,6 +348,45 @@ class ResumePDFGenerator:
         doc.build(story)
 
 
+class ResumeCache:
+    """Cache for parsed resume content to avoid re-parsing on every run"""
+
+    _cache: Dict[str, str] = {}  # Maps file hash to parsed content
+    _path_hash_map: Dict[str, str] = {}  # Maps file path to hash for quick lookup
+
+    @classmethod
+    def _get_file_hash(cls, file_path: str) -> str:
+        """Generate hash based on file path and modification time"""
+        mtime = os.path.getmtime(file_path)
+        return hashlib.md5(f"{file_path}:{mtime}".encode()).hexdigest()
+
+    @classmethod
+    def get(cls, file_path: str) -> Optional[str]:
+        """Get cached resume content if available and file hasn't changed"""
+        if not os.path.exists(file_path):
+            return None
+
+        current_hash = cls._get_file_hash(file_path)
+        cached_hash = cls._path_hash_map.get(file_path)
+
+        if cached_hash == current_hash and current_hash in cls._cache:
+            return cls._cache[current_hash]
+        return None
+
+    @classmethod
+    def set(cls, file_path: str, content: str) -> None:
+        """Cache parsed resume content"""
+        file_hash = cls._get_file_hash(file_path)
+        cls._cache[file_hash] = content
+        cls._path_hash_map[file_path] = file_hash
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all cached content"""
+        cls._cache.clear()
+        cls._path_hash_map.clear()
+
+
 class LangChainResumeAgentUI:
     """Main orchestrator with Rich UI for the agentic resume workflow"""
 
@@ -367,18 +407,29 @@ class LangChainResumeAgentUI:
         self.tailor_agent = ResumeTailoringAgent(self.llm)
         self.recruiter_agent = RecruiterEvaluationAgent(self.llm)
         self.pdf_generator = ResumePDFGenerator()
+        self.resume_cache = ResumeCache
 
     def load_resume(self, resume_path: str) -> str:
-        """Load resume from PDF or text file"""
+        """Load resume from PDF or text file, using cache if available"""
+        # Check cache first
+        cached_content = self.resume_cache.get(resume_path)
+        if cached_content is not None:
+            return cached_content
+
+        # Parse the resume
         if resume_path.lower().endswith('.pdf'):
             reader = PdfReader(resume_path)
             text = ""
             for page in reader.pages:
                 text += page.extract_text() + "\n"
-            return text.strip()
+            content = text.strip()
         else:
             with open(resume_path, 'r', encoding='utf-8') as f:
-                return f.read()
+                content = f.read()
+
+        # Cache the parsed content
+        self.resume_cache.set(resume_path, content)
+        return content
 
     def display_keywords(self, keywords: Dict):
         """Display extracted keywords in a nice table"""
@@ -569,10 +620,14 @@ class LangChainResumeAgentUI:
         ))
         console.print()
 
-        # Load resume
+        # Load resume (uses cache if already parsed)
         console.print("[bold]Loading resume...[/bold]", style="dim")
+        cached = self.resume_cache.get(resume_path) is not None
         current_resume = self.load_resume(resume_path)
-        console.print(f"✓ Resume loaded: [cyan]{os.path.basename(resume_path)}[/cyan]")
+        if cached:
+            console.print(f"✓ Resume loaded from cache: [cyan]{os.path.basename(resume_path)}[/cyan]")
+        else:
+            console.print(f"✓ Resume parsed and cached: [cyan]{os.path.basename(resume_path)}[/cyan]")
         console.print()
 
         # Progress tracking
