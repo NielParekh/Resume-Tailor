@@ -192,6 +192,11 @@ Use this standard format:
 [If applicable]
 
 IMPORTANT:
+- Keep the resume to a STRICT MAXIMUM of 2 pages - aggressively prioritize and cut less relevant content
+- Limit to 3-4 bullet points per job, focus only on the most impactful achievements
+- Include only 1-2 most relevant projects, or omit projects section if experience is strong
+- Omit publications unless directly relevant to the job
+- NEVER add asterisks (*) after dates or anywhere else - use clean formatting without special characters
 - Use keywords from the job naturally
 - Emphasize accomplishments that align with job requirements
 - Keep all information truthful
@@ -300,8 +305,8 @@ class ResumePDFGenerator:
     def convert_to_pdf(resume_text: str, output_path: str):
         """Convert resume text to professionally formatted PDF"""
         doc = SimpleDocTemplate(output_path, pagesize=letter,
-                              rightMargin=0.75*inch, leftMargin=0.75*inch,
-                              topMargin=0.75*inch, bottomMargin=0.75*inch)
+                              rightMargin=0.5*inch, leftMargin=0.5*inch,
+                              topMargin=0.5*inch, bottomMargin=0.5*inch)
 
         story = []
         styles = getSampleStyleSheet()
